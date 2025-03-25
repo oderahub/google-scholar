@@ -1,36 +1,135 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+# How to Setup Your Campus ID
 
-First, run the development server:
+**Important Note:** The OpenCampus ID SDK (`@opencampus/ocid-connect-js`) is currently **not compatible with React 19**. Please ensure you are using React 18.
+
+[NPM Package Link](https://www.npmjs.com/package/@opencampus/ocid-connect-js)
+
+## Working with Vite
+
+1.  **Create a new Vite React project:**
+
+    ```bash
+    npm create vite@latest my-react-app -- --template react
+    ```
+
+2.  **Navigate to the project directory:**
+
+    ```bash
+    cd my-react-app
+    ```
+
+3.  **Install specific React 18 dependencies:**
+
+    ```bash
+    npm install react@18 react-dom@18
+    ```
+
+4.  **Start the development server:**
+
+    ```bash
+    npm run dev
+    ```
+
+## Working with Next.js
+
+1.  **Create a Next.js project:**
+
+    ```bash
+    npx create-next-app@latest my-nextjs-app
+    ```
+
+2.  **Navigate to the project directory:**
+
+    ```bash
+    cd my-nextjs-app
+    ```
+
+3.  **Uninstall existing React packages:**
+
+    ```bash
+    npm uninstall react react-dom
+    ```
+
+4.  **Install specific React 18 versions:**
+
+    ```bash
+    npm install react@18.2.0 react-dom@18.2.0
+    ```
+
+## Installing OpenCampus ID SDK
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm i @opencampus/ocid-connect-js
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Implementation Steps
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1.  **Open your application and create a wrapper context.**
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+    **Sample `OCConnectWrapper.tsx` (or `.jsx`):**
 
-## Learn More
+    ```typescript
+    'use client';
+    import { OCConnect } from '@opencampus/ocid-connect-js';
+    import React from 'react';
 
-To learn more about Next.js, take a look at the following resources:
+    interface OCConnectWrapperProps {
+        children: React.ReactNode;
+        sandboxMode?: boolean; // Optional boolean
+    }
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+    export default function OCConnectWrapper({ children, sandboxMode }: OCConnectWrapperProps) {
+        const opts = {
+            redirectUri: 'http://localhost:3000/redirect', // IMPORTANT: Update this!
+        };
+        return (
+            <OCConnect opts={opts} sandboxMode={sandboxMode}>
+                {children}
+            </OCConnect>
+        );
+    }
+    ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+    **Important:** Remember to replace `http://localhost:3000/redirect` with the actual redirect URI corresponding to where your application is served. This is the URL the OpenCampus ID service will redirect the user back to after authentication.
 
-## Deploy on Vercel
+2.  **Add the context to your root layout.**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+    In Next.js, you typically add context providers in your `layout.tsx` (or `layout.jsx`) file located in the `app` directory. This ensures the context is available throughout your application.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+    **Example `app/layout.tsx`:**
+
+    ```typescript
+    import type { Metadata } from 'next';
+    import { Inter } from 'next/font/google';
+    import './globals.css';
+    import OCConnectWrapper from '../components/OCConnectWrapper'; // Adjust path as needed
+
+    const inter = Inter({ subsets: ['latin'] });
+
+    export const metadata: Metadata = {
+        title: 'My Campus App',
+        description: 'App using OpenCampus ID',
+    };
+
+    export default function RootLayout({ children }: { children: React.ReactNode }) {
+        return (
+            <html lang="en">
+                <body className={inter.className}>
+                    <OCConnectWrapper sandboxMode={true}> {/* or false for production */}
+                        {children}
+                    </OCConnectWrapper>
+                </body>
+            </html>
+        );
+    }
+    ```
+
+    **Explanation:**
+
+    * We import the `OCConnectWrapper` component.
+    * We wrap the `children` prop (which represents the rest of your application) with the `OCConnectWrapper` component.
+    * We set `sandboxMode` to `true` for development/testing or `false` for production.
+
+    **Note:** Adjust the import path for `OCConnectWrapper` based on where you placed the component in your project.
+
