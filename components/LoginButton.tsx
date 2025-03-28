@@ -1,92 +1,38 @@
 'use client'
+import { useOCAuth } from '@opencampus/ocid-connect-js'
+import { Button } from '@/components/ui/button'
+import { Loader2, LinkIcon } from 'lucide-react'
+import { useState } from 'react'
 
-import React from 'react'
-import { useAuth } from './AuthProvider'
+const LoginButton = () => {
+  const { ocAuth } = useOCAuth()
+  const [isLoading, setIsLoading] = useState(false)
 
-export default function LoginButton() {
-  const { login } = useAuth()
+  const handleLogin = async () => {
+    try {
+      setIsLoading(true)
+      await ocAuth.signInWithRedirect({ state: 'opencampus' })
+    } catch (error) {
+      console.error('Login error:', error)
+      setIsLoading(false)
+    }
+  }
 
   return (
-    <div className="space-x-4">
-      <button
-        onClick={() => login('researcher')}
-        className="px-4 py-2 bg-blue-600 text-white rounded-lg"
-      >
-        Login as Researcher
-      </button>
-      <button
-        onClick={() => login('funder')}
-        className="px-4 py-2 bg-green-600 text-white rounded-lg"
-      >
-        Login as Funder
-      </button>
-      <button
-        onClick={() => login('admin')}
-        className="px-4 py-2 bg-purple-600 text-white rounded-lg"
-      >
-        Login as Admin
-      </button>
-    </div>
+    <Button
+      onClick={handleLogin}
+      disabled={isLoading}
+      className="relative overflow-hidden group bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300"
+    >
+      <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-blue-600/0 via-white/10 to-blue-600/0 group-hover:via-white/20 transform translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+      {isLoading ? (
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+      ) : (
+        <LinkIcon className="mr-2 h-4 w-4" />
+      )}
+      Connect with <span className="font-bold ml-1">OCID</span>
+    </Button>
   )
 }
 
-// 'use client'
-
-// import React from 'react'
-// import { useOCAuth } from '@opencampus/ocid-connect-js'
-// import { LogIn } from 'lucide-react'
-
-// export default function LoginButton() {
-//   const { ocAuth } = useOCAuth()
-
-//   const handleLogin = async () => {
-//     try {
-//       await ocAuth.signInWithRedirect({ state: 'opencampus' })
-//     } catch (error) {
-//       console.error('Login error:', error)
-//     }
-//   }
-
-//   return (
-//     <button
-//       onClick={handleLogin}
-//       className="
-//         flex items-center justify-center space-x-2
-//         bg-blue-600 text-white
-//         px-4 py-2 rounded-lg
-//         hover:bg-blue-700
-//         transition-colors
-//         focus:outline-none
-//         focus:ring-2
-//         focus:ring-blue-500
-//         focus:ring-offset-2
-//       "
-//     >
-//       <LogIn className="w-5 h-5" />
-//       <span>
-//         Link <span className="font-bold">OCID</span>
-//       </span>
-//     </button>
-//   )
-// }
-
-// // 'use client'
-// // import React from 'react'
-// // import { useOCAuth } from '@opencampus/ocid-connect-js'
-
-// // const LoginButton = () => {
-// //   const { ocAuth } = useOCAuth();
-
-// //   const handleLogin = async () => {
-// //     try {
-// //       await ocAuth.signInWithRedirect({ state: 'opencampus' });
-// //     } catch (error) {
-// //       console.error('Login error:', error);
-// //     }
-// //   };
-// //   return (
-// //     <button className=' bg-red-400 p-2' onClick={handleLogin}>Link <span className='text-bold'>OCID</span></button>
-// //   )
-// // }
-
-// // export default LoginButton
+export default LoginButton

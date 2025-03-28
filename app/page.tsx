@@ -1,139 +1,189 @@
 'use client'
-
-import React, { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import AdvancedDappLayout from '../components/layouts/AdvancedDappLayout'
-import { LucideIcon, Award, Globe, Lock, Rocket } from 'lucide-react'
-import { useAuth } from '@/components/AuthProvider'
-import DashboardOverview from '@/components/DashboardOverView'
-import UserProfile from '@/components/UserProfile'
-
-interface FeatureCardProps {
-  icon: LucideIcon
-  title: string
-  description: string
-}
+import { useOCAuth } from '@opencampus/ocid-connect-js'
+import LoginButton from '@/components/LoginButton'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { LogOut, User, Shield, Key } from 'lucide-react'
+import BackgroundEffect from '@/components/BackgroundEffect'
 
 export default function Home() {
-  const { user } = useAuth()
-  const router = useRouter()
-  const [isClient, setIsClient] = useState(false)
+  const { authState, ocAuth } = useOCAuth()
 
-  // Ensure component only renders on client
-  useEffect(() => {
-    setIsClient(true)
-  }, [])
-
-  // Explicit navigation effect
-  useEffect(() => {
-    console.log('Home: User state changed:', user)
-    if (user && isClient) {
-      console.log('Home: Navigating to dashboard')
-      router.push('/dashboard')
-    }
-  }, [user, isClient, router])
-
-  // Prevent server-side rendering issues
-  if (!isClient) {
-    return null
+  const handleLogout = () => {
+    ocAuth.signOut()
   }
 
-  // If user exists, show loading or redirect
-  if (user) {
+  // Error state
+  if (authState?.error || authState === undefined) {
     return (
-      <AdvancedDappLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
-      </AdvancedDappLayout>
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="w-full max-w-md border-red-500/20 bg-red-500/5">
+          <CardHeader>
+            <CardTitle className="text-red-500">Authentication Error</CardTitle>
+            <CardDescription>There was a problem with the authentication service.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              {authState?.error?.message || 'An unknown error occurred. Please try again later.'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     )
   }
 
-  // Reusable card component for features
-  const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, description }) => (
-    <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-2">
-      <div className="flex items-center mb-4">
-        <Icon className="w-10 h-10 text-blue-600 mr-4" />
-        <h3 className="text-xl font-semibold text-gray-800">{title}</h3>
+  // Loading state
+  if (authState && authState.isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 rounded-full border-t-2 border-blue-500 animate-spin"></div>
+          <div className="absolute inset-2 rounded-full border-t-2 border-indigo-500 animate-spin animation-delay-150"></div>
+          <div className="absolute inset-4 rounded-full border-t-2 border-purple-500 animate-spin animation-delay-300"></div>
+        </div>
+        <p className="mt-6 text-muted-foreground">Loading authentication state...</p>
       </div>
-      <p className="text-gray-600">{description}</p>
-    </div>
-  )
+    )
+  }
 
   return (
-    <AdvancedDappLayout>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-            <div className="grid md:grid-cols-2 gap-8 p-8 lg:p-16">
-              {/* Left Side: Welcome Section */}
-              <div className="flex flex-col justify-center space-y-6">
-                <div className="flex items-center">
-                  <Award className="w-12 h-12 text-blue-600 mr-4" />
-                  <h2 className="text-4xl font-bold text-gray-900">ResearchChain</h2>
-                </div>
-                <p className="text-xl text-gray-600 leading-relaxed">
-                  Empowering researchers to turn innovative ideas into reality through decentralized
-                  funding and collaboration.
-                </p>
-                <div className="mt-6">
-                  <UserProfile />
-                </div>
-              </div>
+    <div className="relative min-h-screen">
+      <BackgroundEffect />
 
-              {/* Right Side: Features */}
-              <div className="grid grid-cols-1 gap-6">
-                <FeatureCard
-                  icon={Globe}
-                  title="Global Reach"
-                  description="Connect with researchers and funders worldwide, breaking geographical barriers."
-                />
-                <FeatureCard
-                  icon={Rocket}
-                  title="Accelerate Research"
-                  description="Fast-track your research projects with transparent and efficient funding mechanisms."
-                />
-                <FeatureCard
-                  icon={Lock}
-                  title="Secure Funding"
-                  description="Blockchain-powered platform ensuring trust, transparency, and secure transactions."
-                />
-              </div>
+      <div className="container mx-auto px-4 py-12 relative z-10">
+        <div className="flex flex-col items-center justify-center min-h-[80vh]">
+          {authState?.isAuthenticated ? (
+            <AuthenticatedView authState={authState} ocAuth={ocAuth} onLogout={handleLogout} />
+          ) : (
+            <UnauthenticatedView />
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function UnauthenticatedView() {
+  return (
+    <Card className="w-full max-w-md border-blue-500/20 bg-gradient-to-br from-blue-950/40 to-indigo-950/40 backdrop-blur-sm">
+      <CardHeader className="text-center">
+        <Badge className="mx-auto mb-2 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20">
+          OpenCampus ID
+        </Badge>
+        <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">
+          Welcome to Research Scholar
+        </CardTitle>
+        <CardDescription>Connect with your OpenCampus ID to access the platform</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col items-center">
+        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center mb-6">
+          <User className="h-10 w-10 text-blue-400" />
+        </div>
+        <p className="text-center text-muted-foreground mb-6">
+          Securely authenticate using your academic credentials to access research funding
+          opportunities.
+        </p>
+        <LoginButton />
+      </CardContent>
+      <CardFooter className="flex justify-center border-t border-blue-500/10 pt-4">
+        <p className="text-xs text-muted-foreground">
+          By connecting, you agree to our Terms of Service and Privacy Policy
+        </p>
+      </CardFooter>
+    </Card>
+  )
+}
+
+function AuthenticatedView({ authState, ocAuth, onLogout }: any) {
+  const userData = ocAuth.getAuthState()
+
+  return (
+    <Card className="w-full max-w-2xl border-blue-500/20 bg-gradient-to-br from-blue-950/40 to-indigo-950/40 backdrop-blur-sm">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <Badge className="bg-green-500/10 text-green-400 hover:bg-green-500/20">
+            Authenticated
+          </Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onLogout}
+            className="border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Disconnect
+          </Button>
+        </div>
+        <CardTitle className="text-2xl font-bold mt-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">
+          Welcome, {userData?.user?.name || 'Researcher'}
+        </CardTitle>
+        <CardDescription>You're successfully connected with OpenCampus ID</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-6">
+          <div className="flex items-start space-x-4">
+            <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+              <User className="h-5 w-5 text-blue-400" />
+            </div>
+            <div>
+              <h3 className="font-medium text-sm">User Information</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Email: {userData?.user?.email || 'Not available'}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                ID:{' '}
+                {userData?.user?.sub ? userData.user.sub.substring(0, 15) + '...' : 'Not available'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start space-x-4">
+            <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+              <Shield className="h-5 w-5 text-indigo-400" />
+            </div>
+            <div>
+              <h3 className="font-medium text-sm">Authentication Status</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Session expires:{' '}
+                {userData?.expiresAt
+                  ? new Date(userData.expiresAt * 1000).toLocaleString()
+                  : 'Unknown'}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Authentication method: OpenCampus ID Connect
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start space-x-4">
+            <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+              <Key className="h-5 w-5 text-purple-400" />
+            </div>
+            <div>
+              <h3 className="font-medium text-sm">Access Permissions</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                You now have access to submit research proposals, track funding, and connect with
+                funding organizations.
+              </p>
             </div>
           </div>
         </div>
-      </div>
-    </AdvancedDappLayout>
+      </CardContent>
+      <CardFooter className="border-t border-blue-500/10 pt-4">
+        <div className="w-full text-center">
+          <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500">
+            Go to Dashboard
+          </Button>
+        </div>
+      </CardFooter>
+    </Card>
   )
 }
-// 'use client'
-// import LoginButton from "@/components/LoginButton";
-// import { useOCAuth } from "@opencampus/ocid-connect-js";
-
-// export default function Home() {
-//   const { authState, ocAuth } = useOCAuth();
-//   console.log('authState', authState)
-
-//   if (authState?.error|| authState === undefined) {
-//     return <div>Error: </div>;
-//   }
-
-//   // Add a loading state
-//   if ( authState && authState.isLoading) {
-//     return <div>Loading...</div>;
-//   }
-
-//   return (
-//     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-//       <div>
-//       <h1>Welcome to My App</h1>
-//       {authState?.isAuthenticated ? (
-//         <p>You are logged in! {JSON.stringify(ocAuth.getAuthState())}</p>
-
-//       ) : (
-//         <LoginButton />
-//       )}
-//     </div>
-//     </div>
-//   );
-// }

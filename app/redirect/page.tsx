@@ -1,104 +1,67 @@
 'use client'
-
-import React from 'react'
 import { LoginCallBack, useOCAuth } from '@opencampus/ocid-connect-js'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/components/AuthProvider'
+import { Card, CardContent } from '@/components/ui/card'
+import { AlertCircle } from 'lucide-react'
 
-export default function Redirect() {
+const Redirect = () => {
   const router = useRouter()
-  const { ocAuth, authState } = useOCAuth()
-  const { login } = useAuth() // Use login from AuthProvider to set user
+  const { authState } = useOCAuth()
 
-  // Success callback: Set user data and redirect
-  const loginSuccess = async () => {
-    try {
-      console.log('Login successful, authState:', authState)
-      // Assuming authState contains user info after successful login
-      const userData = {
-        id: authState?.user?.id || 'unknown', // Adjust based on actual OCID response
-        name: authState?.user?.name || 'Researcher',
-        email: authState?.user?.email || 'researcher@university.edu',
-        profilePicture: authState?.user?.picture || undefined
-      }
-      // Update AuthProvider with user data
-      localStorage.setItem('user', JSON.stringify(userData))
-      await login('researcher') // This could be extended to sync with OCID data directly
-      // This could be extended to sync with OCID data directly
-      router.push('/dashboard') // Redirect to dashboard
-    } catch (error) {
-      console.error('Error processing login success:', error)
-      router.push('/?error=login_failed')
-    }
+  const loginSuccess = () => {
+    console.log('Success')
+    router.push('/')
   }
 
-  // Error callback: Log and redirect with error
   const loginError = (error: any) => {
     console.error('Login error:', error)
-    router.push('/?error=auth_error') // Redirect to home with error param
   }
 
-  // Custom error component
   function CustomErrorComponent() {
     return (
-      <div className="text-white bg-red-600 p-4 rounded-lg">
-        Error Logging in: {authState.error?.message || 'Unknown error'}
-      </div>
+      <Card className="w-full max-w-md mx-auto mt-20 border-red-500/20 bg-red-500/5">
+        <CardContent className="pt-6">
+          <div className="flex items-center space-x-2 text-red-500">
+            <AlertCircle className="h-5 w-5" />
+            <h3 className="font-medium">Authentication Error</h3>
+          </div>
+          <p className="mt-2 text-muted-foreground">
+            {authState.error?.message || 'An error occurred during login. Please try again.'}
+          </p>
+          <button
+            onClick={() => router.push('/')}
+            className="mt-4 text-sm text-blue-500 hover:text-blue-400 transition-colors"
+          >
+            Return to home
+          </button>
+        </CardContent>
+      </Card>
     )
   }
 
-  // Custom loading component
   function CustomLoadingComponent() {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="text-gray-600 text-lg">Loading...</div>
+      <div className="flex flex-col items-center justify-center min-h-[50vh]">
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 rounded-full border-t-2 border-blue-500 animate-spin"></div>
+          <div className="absolute inset-2 rounded-full border-t-2 border-indigo-500 animate-spin animation-delay-150"></div>
+          <div className="absolute inset-4 rounded-full border-t-2 border-purple-500 animate-spin animation-delay-300"></div>
+        </div>
+        <p className="mt-6 text-muted-foreground">Authenticating with OpenCampus ID...</p>
       </div>
     )
   }
 
   return (
-    <LoginCallBack
-      errorCallback={loginError}
-      successCallback={loginSuccess}
-      customErrorComponent={<CustomErrorComponent />}
-      customLoadingComponent={<CustomLoadingComponent />}
-    />
+    <div className="container mx-auto px-4 py-12">
+      <LoginCallBack
+        errorCallback={loginError}
+        successCallback={loginSuccess}
+        customErrorComponent={<CustomErrorComponent />}
+        customLoadingComponent={<CustomLoadingComponent />}
+      />
+    </div>
   )
 }
 
-// 'use client'
-// import React from 'react'
-// import { LoginCallBack, useOCAuth } from '@opencampus/ocid-connect-js'
-// import { useRouter } from 'next/navigation'
-
-// const Redirect = () => {
-//     const router = useRouter()
-//     const { authState } = useOCAuth()
-
-//     const loginSuccess = () => {
-//         console.log("Success")
-//         router.push('/');
-//      }
-
-//       const loginError = (error: any) => {
-//         console.error('Login error:', error);
-//       };
-
-//       function CustomErrorComponent() {
-//         return <div className='text-white'>Error Logging in: {authState.error?.message}</div>;
-//         }
-
-//         function CustomLoadingComponent() {
-//         return <div>Loading....</div>;
-//         }
-//   return (
-//     <LoginCallBack
-//     errorCallback={loginError}
-//     successCallback={loginSuccess}
-//     customErrorComponent={<CustomErrorComponent />}
-//     customLoadingComponent={<CustomLoadingComponent />}
-//   />
-//   )
-// }
-
-// export default Redirect
+export default Redirect
