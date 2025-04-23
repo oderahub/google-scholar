@@ -140,4 +140,5 @@ npm i @opencampus/ocid-connect-js
 
 https://github.com/user-attachments/assets/2b4a0d6c-c04a-4852-a195-08e9784fd5e8
 
+First hackerton by hackquest via educhain
 
