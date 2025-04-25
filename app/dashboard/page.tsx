@@ -1,16 +1,3 @@
-// 'use client'
-
-// import React from 'react'
-// import AdvancedDappLayout from '../../components/layouts/AdvancedDappLayout'
-// import DashboardOverview from '../../components/DashboardOverView'
-
-// export default function Dashboard() {
-//   return (
-//     <AdvancedDappLayout>
-//       <DashboardOverview />
-//     </AdvancedDappLayout>
-//   )
-// }
 
 'use client'
 
